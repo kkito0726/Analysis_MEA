@@ -70,6 +70,9 @@ if __name__ == '__main__':
 
     file_path = input("bioファイルのパスを入力: ")
     time = input("何秒間のデータを変換しますか？: ")
+
+    print("変換中です!!")
+
     tensors = []
     for cycle, t in enumerate([i for i in range(0, int(time), 2)]):
         data = edit_neuron(file_path,t,t+2)
@@ -83,5 +86,3 @@ if __name__ == '__main__':
     np.save(save_dir+"/"+save_file, tensors)
 
     print(tensors.shape)
-    # plt.imshow(ten)
-    # plt.show()
