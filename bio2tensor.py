@@ -39,8 +39,9 @@ def detect_peak_index(data, threshold=[5., 5.], order=[3, 3]):
     return peak_index
 
 
-def mkTensor(data, peak_index, cycle):
+def mkTensor(data, peak_index, cycle, time_window=0.04,tensor_duration=2):
     '''
+    data=bio_data, peak_index=ピークの時刻データ, time_window=1ピクセルの時間 [s], tensor_duration=1画像の時間 [s]
     縦軸方向に時間、横軸方向に電極の縦(50)*横(64)の二次元テンソルを出力する。
     縦の1ピクセルは40ms間でのピークの数を表している。よって40ms*50=2s間分のデータを
     '''
@@ -49,7 +50,7 @@ def mkTensor(data, peak_index, cycle):
     time_window = 0.04 # 1ピクセルの時間 [s]
     comp = []
 
-    num = [time_window * i + 2 * cycle for i in range(50)]
+    num = [time_window * i + tensor_duration * cycle for i in range(50)]
     for i in num:
         ele_num = []
         for ele in range(1, 65):
@@ -81,8 +82,8 @@ if __name__ == '__main__':
         tensors.append(ten)
     tensors = np.array(tensors)
 
+    print(tensors.shape)
+
     save_dir = input("保存先のディレクトリのパスを入力: ")
     save_file = input("ファイル名を入力: ")
     np.save(save_dir+"/"+save_file, tensors)
-
-    print(tensors.shape)
