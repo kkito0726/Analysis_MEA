@@ -45,15 +45,12 @@ def editTime(file_name, start, end):
     return MEA_raw
 
 # 64電極すべての電極の波形を出力
-# 第一引数はbioファイルのパス
-def showAll(file_name, start=0, end=5, volt_min=-50, volt_max=50):
+def showAll(MEA_raw, start=0, end=5, volt_min=-50, volt_max=50):
     import matplotlib.pyplot as plt
 
     sampling_rate = 10000
     volt_range = 100
-
-    MEA_raw = read_bio(file_name, sampling_rate, volt_range)
-
+    
     sampling_rate = 10000 # サンプリングレート (Hz)
     start_frame = int(start * sampling_rate)
     end_frame = int(end * sampling_rate)
@@ -177,7 +174,7 @@ def detect_peak_index(data, threshold=[5., 5.], order=[3, 3]):
     import numpy as np
     from scipy import signal
     
-    peak_index = [None for _ in range(len(data))]
+    peak_index = np.array([None for _ in range(len(data))])
     for i in range(1, len(data)):
         std_volt = np.std(data[i])
         
@@ -191,66 +188,12 @@ def detect_peak_index(data, threshold=[5., 5.], order=[3, 3]):
 
         peak_index[i] = np.append(positive_peak_index[0], negative_peak_index[0])
         peak_index[i] = np.sort(peak_index[i])
+    peak_index[0] = np.array([])
         
     return peak_index
     
-
-# def save_as_bio:
-
-# def save_peaks_as_csv:
-
-# def read_peaks_from_bio:
-
-# def read_peaks_from_csv:
-"""
 # ラスタプロット
-def raster_plot(data, peak_index):
-    import numpy as np
-    import matplotlib.pyplot as plt
-    
-    plt.figure(figsize=(8, 8))    
-    for i in range(1, len(data)):
-        positive_peak_index = peak_index[i][data[i][peak_index[i]] > 0]
-        plt.plot(data[0][positive_peak_index], np.ones(len(positive_peak_index)) * i, "|", color='black', markersize=4)
-    plt.title("Positive peaks")
-    plt.xticks(range(0, int(np.max(data[0])), 30))
-    plt.xlim(0, np.max(data[0]))
-    plt.ylim(0, 65)
-    plt.yticks(range(4, 65, 4))
-    plt.xlabel("Time (s)")
-    plt.ylabel("Electrode ID")
-    plt.savefig("positive_peaks.png", dpi=300)
-    plt.show()
-    
-    plt.figure(figsize=(8, 8))    
-    for i in range(1, len(data)):
-        negative_peak_index = peak_index[i][data[i][peak_index[i]] < 0]
-        plt.plot(data[0][negative_peak_index], np.ones(len(negative_peak_index)) * i, "|", color='black', markersize=4)
-    plt.title("Negative peaks")
-    plt.xticks(range(0, int(np.max(data[0])), 30))
-    plt.xlim(0, np.max(data[0]))
-    plt.ylim(0, 65)
-    plt.yticks(range(4, 65, 4))
-    plt.xlabel("Time (s)")
-    plt.ylabel("Electrode ID")
-    plt.savefig("negative_peaks.png", dpi=300)
-    plt.show()
-    
-    plt.figure(figsize=(8, 8))    
-    for i in range(1, len(data)):
-        plt.plot(data[0][peak_index[i]], np.ones(len(peak_index[i])) * i, "|", color='black', markersize=4)
-    plt.title("Positive peaks & Negative peaks")
-    plt.xticks(range(0, int(np.max(data[0])), 30))
-    plt.xlim(0, np.max(data[0]))
-    plt.ylim(0, 65)
-    plt.yticks(range(4, 65, 4))
-    plt.xlabel("Time (s)")
-    plt.ylabel("Electrode ID")
-    plt.savefig("all_peaks.png", dpi=300)
-    plt.show()
-"""
-# ラスタプロット
-def raster_plot(data, peak_index, file_name):
+def raster_plot_all(data, peak_index, file_name):
     import numpy as np
     import matplotlib.pyplot as plt
     import os
@@ -294,9 +237,31 @@ def raster_plot(data, peak_index, file_name):
     plt.show()
     
 # 一気通貫
-def bio_to_raster(file_name, sampling_rate=10000, volt_range=100):
+def bio_to_raster_all(file_name, sampling_rate=10000, volt_range=100):
     MEA_raw = read_bio(file_name, sampling_rate=10000, volt_range=100)
     MEA_filt = filter_MEA(MEA_raw)
     peak_index = detect_peak_index(MEA_filt)
 #     raster_plot(MEA_filt, peak_index)
-    raster_plot(data=MEA_filt, peak_index=peak_index, file_name=file_name)
+    raster_plot_all(data=MEA_filt, peak_index=peak_index, file_name=file_name)
+
+
+def raster_plot(data, peak_index, figsize=(8, 8)):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    plt.figure(figsize=figsize)    
+    for i in range(1, len(data)):
+        plt.plot(data[0][peak_index[i]], np.ones(len(peak_index[i])) * i, "|", color='black', markersize=4)
+    plt.title("Positive peaks & Negative peaks")
+    plt.xticks(range(0, int(np.max(data[0])), 30))
+    plt.xlim(0, np.max(data[0]))
+    plt.ylim(0, 65)
+    plt.yticks(range(4, 65, 4))
+    plt.xlabel("Time (s)")
+    plt.ylabel("Electrode Number")
+    plt.show()
+
+# 一気通貫
+def bio_to_raster(MEA_raw, figsize=(8,8)):
+    peak_index = detect_peak_index(MEA_raw)
+    raster_plot(data=MEA_raw, peak_index=peak_index, figsize=figsize)
