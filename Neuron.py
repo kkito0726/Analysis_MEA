@@ -4,7 +4,7 @@ def read_bio(file_name, sampling_rate=10000, volt_range=100): # sampling_rate (H
     electrode_number = 64
     data_unit_length = electrode_number + 4
 
-    data = np.fromfile(file_name, dtype="<h", sep='') * (volt_range / (2**16)) * 4
+    data = np.fromfile(file_name, dtype="<h", sep='') * (volt_range / (2**16-2)) * 4
     data = data.reshape(int(len(data) / data_unit_length), data_unit_length).T
     data = np.delete(data, range(4), 0)
     t = np.arange(len(data[0])) / sampling_rate
@@ -21,7 +21,7 @@ def edit_bio(file_name, start, end, sampling_rate=10000, volt_range=100): # samp
     data_unit_length = electrode_number + 4
 
     bytesize = np.dtype("<h").itemsize
-    data = np.fromfile(file_name, dtype="<h", sep='', offset=start*sampling_rate*bytesize * data_unit_length, count=(end-start)*sampling_rate*data_unit_length) * (volt_range / (2**16-2)) * 40
+    data = np.fromfile(file_name, dtype="<h", sep='', offset=start*sampling_rate*bytesize * data_unit_length, count=(end-start)*sampling_rate*data_unit_length) * (volt_range / (2**16-2)) * 4
     data = data.reshape(int(len(data) / data_unit_length), data_unit_length).T
     data = np.delete(data, range(4), 0)
     t = np.arange(len(data[0])) / sampling_rate
@@ -37,10 +37,6 @@ def editTime(file_name, start, end):
 
     sampling_rate = 10000
     MEA_raw = read_bio(file_name)
-    # MEA_data = []
-    # for i in range(65):
-    #     time = MEA_raw[i][start * sampling_rate : end * sampling_rate]
-    #     MEA_data.append(time)
     MEA_raw = MEA_raw[:64, start * sampling_rate:end * sampling_rate]
     return MEA_raw
 
