@@ -5,7 +5,7 @@ def edit_neuron(file_name, start, end, sampling_rate=10000, volt_range=100): # s
     data_unit_length = electrode_number + 4
 
     bytesize = np.dtype("<h").itemsize
-    data = np.fromfile(file_name, dtype="<h", sep='', offset=start*sampling_rate*bytesize * data_unit_length, count=(end-start)*sampling_rate*data_unit_length) * (volt_range / (2**16)) * 4
+    data = np.fromfile(file_name, dtype="<h", sep='', offset=start*sampling_rate*bytesize * data_unit_length, count=(end-start)*sampling_rate*data_unit_length) * (volt_range / (2**16-2)) * 4
     data = data.reshape(int(len(data) / data_unit_length), data_unit_length).T
     data = np.delete(data, range(4), 0)
     t = np.arange(len(data[0])) / sampling_rate
