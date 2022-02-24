@@ -39,7 +39,7 @@ def detect_peak_index(data, threshold=[5., 5.], order=[3, 3]):
     return peak_index
 
 
-def mkTensor(data, peak_index, cycle, time_window=0.04,tensor_duration=2):
+def mkTensor(data, cycle, time_window=0.04,tensor_duration=2):
     '''
     data=bio_data, peak_index=ピークの時刻データ, time_window=1ピクセルの時間 [s], tensor_duration=1画像の時間 [s]
     縦軸方向に時間、横軸方向に電極の縦(50)*横(64)の二次元テンソルを出力する。
@@ -47,6 +47,7 @@ def mkTensor(data, peak_index, cycle, time_window=0.04,tensor_duration=2):
     '''
     import numpy as np
 
+    peak_index = detect_peak_index(data)
     time_window = 0.04 # 1ピクセルの時間 [s]
     comp = []
 
@@ -56,7 +57,7 @@ def mkTensor(data, peak_index, cycle, time_window=0.04,tensor_duration=2):
         for ele in range(1, 65):
             peak_time = data[0][peak_index[ele]]
             peak_time = peak_time[peak_time<i+time_window]
-            peak_time = peak_time[peak_time>i-time_window]
+            peak_time = peak_time[peak_time>i]
             ele_num.append(len(peak_time))
         comp.append(ele_num)
     
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     for cycle, t in enumerate([i for i in range(0, int(time), 2)]):
         data = edit_neuron(file_path,t,t+2)
         peak_index = detect_peak_index(data)
-        ten = mkTensor(data, peak_index, cycle)
+        ten = mkTensor(data=data, cycle=cycle)
         tensors.append(ten)
     tensors = np.array(tensors)
 
