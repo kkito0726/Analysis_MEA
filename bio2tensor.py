@@ -63,6 +63,7 @@ def mkTensor(data, cycle, time_window=0.04,tensor_duration=2):
     
     return np.array(comp)
 
+
 def mkTensorVolt(data, cycle, time_window=0.04,tensor_duration=2, samplimg=10000):
     import numpy as np
     comp = []
@@ -86,9 +87,7 @@ def mkTensorVolt(data, cycle, time_window=0.04,tensor_duration=2, samplimg=10000
 
 
 
-
 if __name__ == '__main__':
-    # import matplotlib.pyplot as plt
     import numpy as np
 
     file_path = input("bioファイルのパスを入力: ")
