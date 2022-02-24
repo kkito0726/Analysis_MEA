@@ -62,11 +62,32 @@ def mkTensor(data, peak_index, cycle, time_window=0.04,tensor_duration=2):
     
     return np.array(comp)
 
+def mkTensorVolt(data, cycle, time_window=0.04,tensor_duration=2, samplimg=10000):
+    import numpy as np
+    comp = []
+    peak_index = detect_peak_index(data)
+
+    num = [time_window * i + tensor_duration * cycle for i in range(50)]
+    for n in num:
+        peak_volt = []
+        for ele in range(1, len(data)):
+            index = peak_index[ele][peak_index[ele]<(n+time_window)*samplimg]
+            index = index[index>n*samplimg]
+            peak = abs(data[ele][index])
+
+            if len(peak) == 0:
+                peak_volt.append(0)
+            else:
+                peak_volt.append(peak.max())
+        comp.append(peak_volt)
+
+    return np.array(comp)
+
 
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
     import numpy as np
 
     file_path = input("bioファイルのパスを入力: ")
