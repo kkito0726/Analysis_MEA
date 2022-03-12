@@ -187,7 +187,25 @@ def detect_peak_index(data, threshold=[5., 5.], order=[3, 3]):
     peak_index[0] = np.array([])
         
     return peak_index
-    
+
+def remove_stm_fourier(data, cut_off=1):
+    import numpy as np
+    new_data = [data[0]]
+    for i in range(1, 65):
+        fq = np.linspace(0, 1.0/0.02, len(data[i]))
+        fc = cut_off # カットオフ（周波数）
+        F = np.fft.fft(data[i])
+        F[(fq > fc)] = 0 # カットオフを超える周波数のデータをゼロにする（ノイズ除去）
+        F_ifft_real = np.fft.ifft(F).real * 2 # 逆フーリエ変換して実数部の取得、振幅を元スケールに戻す
+        rm_stm = data[i] - F_ifft_real
+        new_data.append(rm_stm)
+    return np.array(new_data)
+
+def remove_peak(new_data, arti_peak_index, base_ch):
+    for i in arti_peak_index[base_ch]:
+        new_data[1:, i-90:i+100] = 0
+    return new_data
+
 # ラスタプロット
 def raster_plot_all(data, peak_index, file_name):
     import numpy as np
