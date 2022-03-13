@@ -31,15 +31,6 @@ def edit_bio(file_name, start, end, sampling_rate=10000, volt_range=100): # samp
     
     return data
 
-# 読み込んだデータを任意の範囲の時間に編集する。
-def editTime(file_name, start, end):
-    import numpy as np
-
-    sampling_rate = 10000
-    MEA_raw = read_bio(file_name)
-    MEA_raw = MEA_raw[:64, start * sampling_rate:end * sampling_rate]
-    return MEA_raw
-
 # 64電極すべての電極の波形を出力
 def showAll(MEA_raw, start=0, end=5, volt_min=-50, volt_max=50):
     import matplotlib.pyplot as plt
@@ -181,6 +172,21 @@ def detect_peak_index(data, threshold=[5., 5.], order=[3, 3]):
         volt_low = data[i].copy()
         volt_low[volt_low >  -std_volt * threshold[0]] = 0.
         negative_peak_index = signal.argrelmin(volt_low, order=order[1])
+
+        peak_index[i] = np.append(positive_peak_index[0], negative_peak_index[0])
+        peak_index[i] = np.sort(peak_index[i])
+    peak_index[0] = np.array([])
+        
+    return peak_index
+
+def detect_peak_index2(data, height=20, distance=5000):
+    import numpy as np
+    from scipy.signal import find_peaks
+    
+    peak_index = np.array([None for _ in range(len(data))])
+    for i in range(1, len(data)):
+        positive_peak_index = find_peaks(data[i], height=height, distance=distance)
+        negative_peak_index = find_peaks(-data[i], height=height, distance=distance)
 
         peak_index[i] = np.append(positive_peak_index[0], negative_peak_index[0])
         peak_index[i] = np.sort(peak_index[i])
