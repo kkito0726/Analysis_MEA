@@ -212,6 +212,27 @@ def remove_peak(new_data, arti_peak_index, base_ch):
         new_data[1:, i-90:i+100] = 0
     return new_data
 
+def peak_flatten(data, peak_index):
+    import numpy as np
+    import itertools
+
+    detect_time = [data[0][peak_index[i]] for i in range(1, 65)]
+    detect_time = list(itertools.chain.from_iterable(detect_time))
+    
+    return np.array(detect_time)
+
+def mkHist(data, peak_index, bin_duration=0.05, sampling=10000, start=0, end=600):
+    import matplotlib.pyplot as plt
+    
+    detect_time = peak_flatten(data, peak_index)
+    
+    plt.figure(figsize=(20,6))
+    bins = len(data[0]) / sampling / bin_duration
+    y,_,_ = plt.hist(detect_time, bins=int(bins), color="k")
+    plt.xlim(start, end)
+    
+    return y
+
 # ラスタプロット
 def raster_plot_all(data, peak_index, file_name):
     import numpy as np
