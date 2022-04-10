@@ -1,20 +1,21 @@
-def read_bio(file_name, sampling_rate=10000, volt_range=100): # sampling_rate (Hz), volt_range (mV)
-    import numpy as np
+# hedファイルの解読関数
+def decode_hed(file_name):
+  import numpy as np
 
-    electrode_number = 64
-    data_unit_length = electrode_number + 4
+  # hedファイルを読み込む。
+  hed_data = np.fromfile(file_name, dtype='<h', sep='')
 
-    data = np.fromfile(file_name, dtype="<h", sep='') * (volt_range / (2**16-2)) * 4
-    data = data.reshape(int(len(data) / data_unit_length), data_unit_length).T
-    data = np.delete(data, range(4), 0)
-    t = np.arange(len(data[0])) / sampling_rate
-    t = t.reshape(1, len(t))
-    data = np.append(t, data, axis=0)
-    
-    return data
+  # rate（サンプリングレート）、gain（ゲイン）の解読辞書。
+  rates = {0:100000, 1:50000, 2:25000, 3:20000, 4:10000, 5:5000}
+  gains ={16436:20, 16473:100, 16527:1000, 16543:2000,\
+          16563:5000, 16579:10000, 16595:20000, 16616:50000}
 
-# データの一部分のみを読み込む
-def edit_bio(file_name, start, end, sampling_rate=10000, volt_range=100): # sampling_rate (Hz), volt_range (mV)
+  # サンプリングレートとゲインを返す。
+  # hed_dataの要素16がrate、要素3がgainのキーとなる。
+  return [rates[hed_data[16]], gains[hed_data[3]]]
+
+# bioファイルを読み込む関数
+def read_bio(file_name, start, end, sampling_rate=10000, gain=50000, volt_range=100): # sampling_rate (Hz), volt_range (mV)
     import numpy as np
 
     electrode_number = 64
@@ -24,12 +25,27 @@ def edit_bio(file_name, start, end, sampling_rate=10000, volt_range=100): # samp
     data = np.fromfile(file_name, dtype="<h", sep='', offset=start*sampling_rate*bytesize * data_unit_length, count=(end-start)*sampling_rate*data_unit_length) * (volt_range / (2**16-2)) * 4
     data = data.reshape(int(len(data) / data_unit_length), data_unit_length).T
     data = np.delete(data, range(4), 0)
+    
+    # Gainの値に合わせてデータを増幅させる。
+    if gain != 50000:
+        amp = 50000 / gain
+        data *= amp
+        
     t = np.arange(len(data[0])) / sampling_rate
     t = t.reshape(1, len(t))
     t = t + start
     data = np.append(t, data, axis=0)
     
     return data
+
+# hedファイルの情報からbioファイルを一気に読み込む
+def hed2array(file_name, start, end):
+    import os
+    # hedファイルからサンプリングレートとゲインを取得
+    samp, gain = decode_hed(file_name)
+    
+    bio_path = os.path.splitext(file_name)[0] + "0001.bio"
+    return read_bio(bio_path, start, end, sampling_rate=samp, gain=gain)
 
 # 64電極すべての電極の波形を出力
 def showAll(MEA_raw, start=0, end=5, volt_min=-50, volt_max=50):
@@ -117,36 +133,36 @@ def filter_MEA(data, sampling_rate=10000):
     return data_filt
 
 # フィルタ処理
-def filter_MEA(data, sampling_rate=10000):
-    import numpy as np
-    import filter_function
+# def filter_MEA(data, sampling_rate=10000):
+#     import numpy as np
+#     import filter_function
 
-    data_filt = np.zeros_like(data)
-    data_filt[0] = data[0].copy()
+#     data_filt = np.zeros_like(data)
+#     data_filt[0] = data[0].copy()
     
-    # フィルタの設定（50 Hzの周期的ノイズ）
-    fp_50 = np.array([45, 55]) # 通過域端周波数[Hz]
-    fs_50 = np.array([30, 100]) # 阻止域端周波数[Hz]
-    gpass_50 = 3 # 通過域端最大損失[dB]
-    gstop_50 = 40 # 阻止域端最小損失[dB]
+#     # フィルタの設定（50 Hzの周期的ノイズ）
+#     fp_50 = np.array([45, 55]) # 通過域端周波数[Hz]
+#     fs_50 = np.array([30, 100]) # 阻止域端周波数[Hz]
+#     gpass_50 = 3 # 通過域端最大損失[dB]
+#     gstop_50 = 40 # 阻止域端最小損失[dB]
     
-   # フィルタの設定（2 kHzの周期的ノイズ）
-    fp_2k = np.array([1900, 2100]) # 通過域端周波数[Hz]
-    fs_2k = np.array([1000, 4000]) # 阻止域端周波数[Hz]
-    gpass_2k = 3 # 通過域端最大損失[dB]
-    gstop_2k = 40 # 阻止域端最小損失[dB]
+#    # フィルタの設定（2 kHzの周期的ノイズ）
+#     fp_2k = np.array([1900, 2100]) # 通過域端周波数[Hz]
+#     fs_2k = np.array([1000, 4000]) # 阻止域端周波数[Hz]
+#     gpass_2k = 3 # 通過域端最大損失[dB]
+#     gstop_2k = 40 # 阻止域端最小損失[dB]
     
-    # 移動平均
-    num = 5  # 移動平均のフレーム数
-    b = np.ones(num)/num
+#     # 移動平均
+#     num = 5  # 移動平均のフレーム数
+#     b = np.ones(num)/num
     
-    # フィルタ処理
-    for i in range(1, len(data)):
-        # 平均が0になるように値をシフト
-        data_filt[i] = data[i] - np.mean(data[i])
+#     # フィルタ処理
+#     for i in range(1, len(data)):
+#         # 平均が0になるように値をシフト
+#         data_filt[i] = data[i] - np.mean(data[i])
         
-        # 50 Hzでバンドストップ
-        data_filt[i] = filter_function.bandstop(data_filt[i], sampling_rate, fp_50, fs_50, gpass_50, gstop_50)
+#         # 50 Hzでバンドストップ
+#         data_filt[i] = filter_function.bandstop(data_filt[i], sampling_rate, fp_50, fs_50, gpass_50, gstop_50)
         
 #         # 2 kHzでバンドストップ
 #         data_filt[i] = filter_function.bandstop(data_filt[i], sampling_rate, fp_2k, fs_2k, gpass_2k, gstop_2k)
@@ -154,7 +170,7 @@ def filter_MEA(data, sampling_rate=10000):
 #         # 移動平均
 #         data_filt[i] = np.convolve(data_filt[i], b, mode='same')
         
-    return data_filt
+    # return data_filt
 
 # ピーク検出
 def detect_peak_index(data, threshold=[5., 5.], order=[3, 3]):
