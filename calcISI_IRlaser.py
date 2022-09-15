@@ -65,11 +65,10 @@ def detect_peak_neg(data, distance=5000):
     return peak_index
 
 
-def isi_IRlaser(hed_path, interval_length, interval_num):
+def isi_IRlaser(hed_path, ele, interval_num, interval_length):
     start= [0, 34, 64, 94, 124, 154, 184, 214, 244, 274] 
     end = [i*interval_length for i in range(1, interval_num+1)]
     x, y = [], []
-    ele = 28
 
     for t in range(len(start)):
         data = hed2array(hed_path, start[t], end[t])
@@ -122,8 +121,10 @@ def graph(x, y):
     
 if __name__ == "__main__":
     hed_path = "G:\マイドライブ\研究\心筋シート\赤外線レーザー損傷/220907_解剖_9日胚\dish3/220910_day3_5point_0.5W_5min_.hed"
-    interval_length = 30
+    ele = 28
     interval_num = 10
+    interval_length = 30
     
-    x, y = isi_IRlaser(hed_path, interval_length, interval_num)
+    
+    x, y = isi_IRlaser(hed_path, ele, interval_num, interval_length)
     graph(x, y)
