@@ -72,11 +72,11 @@ def isi_IRlaser(hed_path, ele, interval_num, interval_length):
 
     for t in range(len(start)):
         data = hed2array(hed_path, start[t], end[t])
-        peak_index = detect_peak_neg(data)
-        time = [data[0][peak_index[i]] for i in range(1, 65)]
+        peak_index = find_peaks(-data[ele], height=np.std(data[ele]*3), distance=5000)[0]
+        time = data[0][peak_index]
         
-        isi_x = time[ele][:-1]
-        isi = time[ele][1:]-time[ele][:-1]
+        isi_x = time[:-1]
+        isi = time[1:]-time[:-1]
         
         x.append(isi_x)
         y.append(isi)
@@ -120,11 +120,11 @@ def graph(x, y):
     plt.show()
     
 if __name__ == "__main__":
+    
     hed_path = "G:\マイドライブ\研究\心筋シート\赤外線レーザー損傷/220907_解剖_9日胚\dish3/220910_day3_5point_0.5W_5min_.hed"
     ele = 28
     interval_num = 10
     interval_length = 30
-    
     
     x, y = isi_IRlaser(hed_path, ele, interval_num, interval_length)
     graph(x, y)
