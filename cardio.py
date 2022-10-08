@@ -104,11 +104,10 @@ def circuit(file_name, start=0, end=5, sampling_rate=10000):
 
 
 #任意の電極データを一つのグラフに表示
-def showDetection(file_name, eles, start=0, end=5, sampling_rate=10000):
+def showDetection(MEA_raw, eles, start=0, end=5, sampling_rate=10000, figsize=(12, 12)):
     import matplotlib.pyplot as plt
     import numpy as np
 
-    MEA_raw = read_bio(file_name)
 
     MEA_data = []
     for ele in eles:
@@ -118,13 +117,14 @@ def showDetection(file_name, eles, start=0, end=5, sampling_rate=10000):
     start_frame = int(start * sampling_rate)
     end_frame = int(end * sampling_rate)
 
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=figsize)
     for i, index in enumerate(np.array(data)):
-        tmp_volt = (index - np.mean(index)) / 10
+        tmp_volt = (index - np.mean(index)) / 50
         plt.plot(MEA_raw[0][start_frame:end_frame], tmp_volt[start_frame:end_frame] + i)
 
+    ele_label = [str(eles[i]) for i in range(len(eles))]
     plt.xlim(start, end)
-    plt.yticks(range(0,len(eles),1))
+    plt.yticks(range(0,len(eles),1), ele_label)
     plt.ylim(-1, len(eles),1)
     plt.xlabel("Time(s)")
     plt.ylabel("Electrode Number")
