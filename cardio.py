@@ -1,29 +1,36 @@
-def read_bio(file_name, sampling_rate=10000, volt_range=100): # sampling_rate (Hz), volt_range (mV)
-    import numpy as np
+# hedファイルの解読関数
+def decode_hed(file_name):
+  import numpy as np
 
-    electrode_number = 64
-    data_unit_length = electrode_number + 4
+  # hedファイルを読み込む。
+  hed_data = np.fromfile(file_name, dtype='<h', sep='')
 
-    data = np.fromfile(file_name, dtype="<h", sep='') * (volt_range / (2**16-2)) * 40
-    data = data.reshape(int(len(data) / data_unit_length), data_unit_length).T
-    data = np.delete(data, range(4), 0)
-    t = np.arange(len(data[0])) / sampling_rate
-    t = t.reshape(1, len(t))
-    data = np.append(t, data, axis=0)
-    
-    return data
+  # rate（サンプリングレート）、gain（ゲイン）の解読辞書。
+  rates = {0:100000, 1:50000, 2:25000, 3:20000, 4:10000, 5:5000}
+  gains ={16436:20, 16473:100, 16527:1000, 16543:2000,\
+          16563:5000, 16579:10000, 16595:20000, 16616:50000}
 
-# データの一部分のみを読み込む
-def edit_bio(file_name, start, end, sampling_rate=10000, volt_range=100): # sampling_rate (Hz), volt_range (mV)
+  # サンプリングレートとゲインを返す。
+  # hed_dataの要素16がrate、要素3がgainのキーとなる。
+  return [rates[hed_data[16]], gains[hed_data[3]]]
+
+# bioファイルを読み込む関数
+def read_bio(file_name, start, end, sampling_rate=10000, gain=50000, volt_range=100): # sampling_rate (Hz), volt_range (mV)
     import numpy as np
 
     electrode_number = 64
     data_unit_length = electrode_number + 4
 
     bytesize = np.dtype("<h").itemsize
-    data = np.fromfile(file_name, dtype="<h", sep='', offset=start*sampling_rate*bytesize * data_unit_length, count=(end-start)*sampling_rate*data_unit_length) * (volt_range / (2**16-2)) * 40
+    data = np.fromfile(file_name, dtype="<h", sep='', offset=start*sampling_rate*bytesize * data_unit_length, count=(end-start)*sampling_rate*data_unit_length) * (volt_range / (2**16-2)) * 4
     data = data.reshape(int(len(data) / data_unit_length), data_unit_length).T
     data = np.delete(data, range(4), 0)
+    
+    # Gainの値に合わせてデータを増幅させる。
+    if gain != 50000:
+        amp = 50000 / gain
+        data *= amp
+        
     t = np.arange(len(data[0])) / sampling_rate
     t = t.reshape(1, len(t))
     t = t + start
@@ -31,19 +38,15 @@ def edit_bio(file_name, start, end, sampling_rate=10000, volt_range=100): # samp
     
     return data
 
+# hedファイルの情報からbioファイルを一気に読み込む
+def hed2array(file_name, start, end):
+    import os
+    # hedファイルからサンプリングレートとゲインを取得
+    samp, gain = decode_hed(file_name)
+    
+    bio_path = os.path.splitext(file_name)[0] + "0001.bio"
+    return read_bio(bio_path, start, end, sampling_rate=samp, gain=gain)
 
-# 読み込んだデータを任意の範囲の時間に編集する。
-def editTime(file_name, start, end):
-    import numpy as np
-
-    sampling_rate = 10000
-    MEA_raw = read_bio(file_name)
-    # MEA_data = []
-    # for i in range(65):
-    #     time = MEA_raw[i][start * sampling_rate : end * sampling_rate]
-    #     MEA_data.append(time)
-    MEA_raw = MEA_raw[:65, start * sampling_rate:end * sampling_rate]
-    return MEA_raw
 
 def filter_MEA(data, sampling_rate=10000):
     import numpy as np
@@ -85,15 +88,12 @@ def filter_MEA(data, sampling_rate=10000):
     return data_filt
 
 # 64電極すべての電極の波形を出力
-# 第一引数はbioファイルのパス
-def showAll(file_name, start=0, end=5, volt_min=-200, volt_max=200):
+def showAll(MEA_raw, start=0, end=5, volt_min=-200, volt_max=200):
     import matplotlib.pyplot as plt
 
     sampling_rate = 10000
     volt_range = 100
-
-    MEA_raw = edit_bio(file_name,start=start,end=end, sampling_rate=sampling_rate, volt_range=volt_range)
-
+    
     sampling_rate = 10000 # サンプリングレート (Hz)
     start_frame = int(start * sampling_rate)
     end_frame = int(end * sampling_rate)
@@ -102,7 +102,7 @@ def showAll(file_name, start=0, end=5, volt_min=-200, volt_max=200):
     for i in range(1, 65, 1):
         plt.subplot(8, 8, i)
         plt.plot(MEA_raw[0][start_frame:end_frame], MEA_raw[i][start_frame:end_frame])
-        plt.xlim(start, end)
+        # plt.xlim(start, end)
         plt.ylim(volt_min, volt_max)
         
     plt.show()
