@@ -45,6 +45,45 @@ def editTime(file_name, start, end):
     MEA_raw = MEA_raw[:65, start * sampling_rate:end * sampling_rate]
     return MEA_raw
 
+def filter_MEA(data, sampling_rate=10000):
+    import numpy as np
+    # import filter_function
+
+    data_filt = np.zeros_like(data)
+    data_filt[0] = data[0].copy()
+    
+    # フィルタの設定（50 Hzの周期的ノイズ）
+    fp_50 = np.array([45, 55]) # 通過域端周波数[Hz]
+    fs_50 = np.array([30, 100]) # 阻止域端周波数[Hz]
+    gpass_50 = 3 # 通過域端最大損失[dB]
+    gstop_50 = 40 # 阻止域端最小損失[dB]
+    
+   # フィルタの設定（2 kHzの周期的ノイズ）
+    fp_2k = np.array([1900, 2100]) # 通過域端周波数[Hz]
+    fs_2k = np.array([1000, 4000]) # 阻止域端周波数[Hz]
+    gpass_2k = 3 # 通過域端最大損失[dB]
+    gstop_2k = 40 # 阻止域端最小損失[dB]
+    
+    # 移動平均
+    num = 5  # 移動平均のフレーム数
+    b = np.ones(num)/num
+    
+    # フィルタ処理
+    for i in range(1, len(data)):
+        # 平均が0になるように値をシフト
+        data_filt[i] = data[i] - np.mean(data[i])
+        
+#         # 50 Hzでバンドストップ
+#         data_filt[i] = filter_function.bandstop(data_filt[i], sampling_rate, fp_50, fs_50, gpass_50, gstop_50)
+        
+#         # 2 kHzでバンドストップ
+#         data_filt[i] = filter_function.bandstop(data_filt[i], sampling_rate, fp_2k, fs_2k, gpass_2k, gstop_2k)
+        
+        # 移動平均
+        data_filt[i] = np.convolve(data_filt[i], b, mode='same')
+        
+    return data_filt
+
 # 64電極すべての電極の波形を出力
 # 第一引数はbioファイルのパス
 def showAll(file_name, start=0, end=5, volt_min=-200, volt_max=200):
@@ -67,6 +106,38 @@ def showAll(file_name, start=0, end=5, volt_min=-200, volt_max=200):
         plt.ylim(volt_min, volt_max)
         
     plt.show()
+
+# 64電極すべての下ピークを取得
+def detect_peak_neg(data, distance=5000, width=None, prominence=None):
+    import numpy as np
+    from scipy.signal import find_peaks
+    
+    peak_index = np.array([None for _ in range(len(data))])
+    for i in range(1, len(data)):
+        height = np.std(data[i]) * 3
+        detect_peak_index = find_peaks(-data[i], height=height, distance=distance, width=width, prominence=prominence)
+        
+        peak_index[i] = detect_peak_index[0]
+        peak_index[i] = np.sort(peak_index[i])
+    peak_index[0] = np.array([])
+        
+    return peak_index
+
+# 64電極すべての上ピークを取得
+def detect_peak_pos(data, distance=10000, width=None, prominence=None, height=(10, 80)):
+    import numpy as np
+    from scipy.signal import find_peaks
+    
+    peak_index = np.array([None for _ in range(len(data))])
+    for i in range(1, len(data)):
+        # height = np.std(data[i]) * 3
+        detect_peak_index = find_peaks(data[i], height=height, distance=distance, width=width, prominence=prominence)
+        
+        peak_index[i] = detect_peak_index[0]
+        peak_index[i] = np.sort(peak_index[i])
+    peak_index[0] = np.array([])
+        
+    return peak_index
 
 #外周のデータを表示
 def circuit(file_name, start=0, end=5, sampling_rate=10000):
