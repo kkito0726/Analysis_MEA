@@ -237,15 +237,16 @@ def peak_flatten(data, peak_index):
     
     return np.array(detect_time)
 
-def mkHist(data, peak_index, bin_duration=0.05, sampling=10000, start=0, end=600):
+def mkHist(data, peak_index, figsize=(20, 6),bin_duration=0.05, sampling=10000, start=0, end=600, dpi=300):
     import matplotlib.pyplot as plt
     
     detect_time = peak_flatten(data, peak_index)
     
-    plt.figure(figsize=(20,6))
+    plt.figure(figsize=figsize, dpi=dpi)
     bins = len(data[0]) / sampling / bin_duration
     y,_,_ = plt.hist(detect_time, bins=int(bins), color="k")
     plt.xlim(start, end)
+    plt.ylabel("Nomber of spikes")
     
     return y
 
@@ -302,16 +303,16 @@ def bio_to_raster_all(file_name, sampling_rate=10000, volt_range=100):
     raster_plot_all(data=MEA_filt, peak_index=peak_index, file_name=file_name)
 
 
-def raster_plot(data, peak_index, figsize=(8, 8)):
+def raster_plot(data, peak_index, figsize=(8, 8), start=0):
     import numpy as np
     import matplotlib.pyplot as plt
     
-    plt.figure(figsize=figsize)    
+    plt.figure(figsize=figsize, dpi=300)    
     for i in range(1, len(data)):
         plt.plot(data[0][peak_index[i]], np.ones(len(peak_index[i])) * i, "|", color='black', markersize=4)
-    plt.title("Positive peaks & Negative peaks")
+    # plt.title("Positive peaks & Negative peaks")
     plt.xticks(range(0, int(np.max(data[0])), 30))
-    plt.xlim(0, np.max(data[0]))
+    plt.xlim(start, np.max(data[0]))
     plt.ylim(0, 65)
     plt.yticks(range(4, 65, 4))
     plt.xlabel("Time (s)")
