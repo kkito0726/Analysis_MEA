@@ -304,6 +304,28 @@ def posPeaks(data, ele, height=20, distance=5000, isFig = True):
 
     return time
 
+def min_length(time, i):
+    if len(time[i]) > len(time[i+1]):
+        return len(time[i+1])
+    else:
+        return len(time[i])
+
+def calc_velocity(data, peak_index):
+    time = [data[0][peak_index[i]] for i in range(1, 65)]
+    detect_times = []
+
+    for i in range(63):
+        length = min_length(time, i)
+        if time[i+1][0] > time[i][0]:
+            detect_time = time[i+1][:length] - time[i][:length]
+        else:
+            detect_time = time[i][:length] - time[i+1][:length]
+        detect_time = detect_time[detect_time > 0]
+        velocity = 450 / detect_time / (10**6)
+        detect_times.append(velocity)
+
+    return detect_times
+
 def allTime(data, order=100):
     eles = [
         1,2,3,4,5,6,7,8,
